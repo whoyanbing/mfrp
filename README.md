@@ -1,1 +1,2 @@
-#2018.6.6 first day
+#2018.6.6 start
+#C++ training homework ATM
