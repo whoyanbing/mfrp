@@ -1,35 +1,50 @@
 #include "sqlite.h"
 #include <iostream>
 #include "function.cc"
+#include <stdexcept>
 
 void SqStmt::bind(int index, int val)
 {
-	sqlite3_bind_int(stmt_, index, val);
+	if(sqlite3_bind_int(stmt_, index, val) != SQLITE_OK)
+        throw std::runtime_error("bind error");
 }
 
 void SqStmt::bind(int index, const std::string& val)
 {
-	sqlite3_bind_text(stmt_, index, val.c_str(), -1, SQLITE_STATIC);
+	if(sqlite3_bind_text(stmt_, index, val.c_str(), -1, SQLITE_STATIC) != SQLITE_OK)
+        throw std::runtime_error("bind error");
 }
 
 void SqStmt::bind(int index, double val)
 {
-	sqlite3_bind_double(stmt_, index, val);
+	if(sqlite3_bind_double(stmt_, index, val) != SQLITE_OK)
+        throw std::runtime_error("bind error");
 }
 
 int SqStmt::step()
 {
-	return sqlite3_step(stmt_);
+	int res = sqlite3_step(stmt_);
+    if(res != SQLITE_DONE && res != SQLITE_ROW){
+        throw std::runtime_error("step error");
+    }
+    else{
+        return res;
+    }
 }
 
-int SqStmt::column_int(int n)
+void SqStmt::column(int n, int& val)
 {
-    return sqlite3_column_int(stmt_,n);
+    val = sqlite3_column_int(stmt_,n);
 }
 
-const char* SqStmt::column_txt(int n)
+void SqStmt::column(int n, double& val)
 {
-    return (const char*)sqlite3_column_text(stmt_,n);
+    val = sqlite3_column_double(stmt_,n);
+}
+
+void SqStmt::column(int n, std::string& val)
+{
+    val = (const char*)sqlite3_column_text(stmt_,n);
 }
 
 SqStmt::~SqStmt()
@@ -37,22 +52,33 @@ SqStmt::~SqStmt()
 	sqlite3_finalize(stmt_);
 }
 
-Sqlite::Sqlite(const std::string& dbname)
+std::string DB_PATH;
+
+Sqlite::Sqlite()
 {
-	sqlite3_open(dbname.c_str(), &db_);
+	int res = sqlite3_open(DB_PATH.c_str(), &db_);
+	if(res != SQLITE_OK)
+        throw std::runtime_error("db open error");
 }
 
 SqStmt Sqlite::prepare(const std::string& sql)
 {
     SqStmt stmt;
-	sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt.stmt_, NULL);
-	return stmt;
+	if(sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt.stmt_, NULL) != SQLITE_OK){
+        throw std::runtime_error("prepare error"); 
+    }
+    else{
+	    return stmt;
+    }
+}
+
+int Sqlite::changes(){
+    return sqlite3_changes(db_);
 }
 
 int Sqlite::exec(const std::string& sql)
 {
 	return sqlite3_exec(db_, sql.c_str(), NULL,NULL,0);
-	sqlite3_exec(db_, sql.c_str(), NULL, NULL, 0);
 }
 
 Sqlite::~Sqlite()
@@ -60,116 +86,156 @@ Sqlite::~Sqlite()
 	sqlite3_close(db_);
 }
 
-bool AccountDAO::isset_user(const std::string& name)
+
+bool AccountDAO::auth(const std::string& name,const std::string& pwd)
 {
-    SqStmt st = sqlite_.prepare("select * from user where USERNAME=?");
-    st.bind(1,name);
-    if(st.step() == SQLITE_ROW)
-        return true;
-    else
-        return false;
-}
-
-void AccountDAO::auth(const std::string& name,const std::string& pwd)
-{
-    SqStmt st = sqlite_.prepare("select * from user where USERNAME=? and PASSWORD=?");
-    st.bind(1,name);
-    std::string tmp = sha256(pwd);
-    st.bind(2,tmp);
-    if(st.step() == SQLITE_ROW)
-        std::cout << "login success" << std::endl;
-    else
-        std::cout << "error" << std::endl;
-}
-
-void AccountDAO::insert(const std::string& name,const std::string& pwd)
-{
-    SqStmt st = sqlite_.prepare("insert into user(USERNAME,PASSWORD) values(?,?)");
-    st.bind(1,name);
-    std::string tmp = sha256(pwd);
-    st.bind(2,tmp);
-    if(st.step())
-        std::cout << "insert success" << std::endl;
-    else
-        std::cout << "error" << std::endl;
-}
-
-void AccountDAO::deposit(const std::string& name,double sum)
-{
-    SqStmt st = sqlite_.prepare("update user set BALANCE=BALANCE+? where USERNAME=?");
-    st.bind(1,sum);
-    st.bind(2,name);
-    if(isset_user(name)){
-        st.step();
-        SqStmt st2 = sqlite_.prepare("insert into log(USERNAME,OPERATOR,MONEY) values(?,?,?)");
-        st2.bind(1,name);
-        st2.bind(2,"deposit");
-        st2.bind(3,sum);
-        st2.step();
-        std::cout << "deposit success!" << std::endl;
-    }else{
-        std::cout << "deposit error" << std::endl;
-    }
-}
-
-void AccountDAO::withdraw(const std::string& name,double sum)
-{
-    SqStmt st = sqlite_.prepare("update user set BALANCE=BALANCE-? where USERNAME=? and BALANCE>?");
-    st.bind(1,sum);
-    st.bind(2,name);
-    st.bind(3,sum);
-    if(st.step()){
-        SqStmt st2 = sqlite_.prepare("insert into log(USERNAME,OPERATOR,MONEY) values(?,?,?)");
-        st2.bind(1,name);
-        st2.bind(2,"withdraw");
-        st2.bind(3,sum);
-        st2.step();
-        std::cout << "withdraw success!" << std::endl;
-    }
-    else{
-        std::cout << "withdraw error" << std::endl;
-    }
-}
-
-
-void AccountDAO::transfer(const std::string& name1,const std::string& name2, double sum)
-{
-    int ret =  sqlite_.exec("begin");
-    SqStmt st1 = sqlite_.prepare("update user set BALANCE=BALANCE-? where USERNAME=? and BALANCE>?");
-    st1.bind(1,sum);
-    st1.bind(2,name1);
-    st1.bind(3,sum);
-    ret = st1.step();
-    if(ret != SQLITE_DONE){
-        ret = sqlite_.exec("rollback");
-    }
-    SqStmt st2 = sqlite_.prepare("update user set BALANCE=BALANCE+? where USERNAME=?");
-    st2.bind(1,sum);
-    st2.bind(2,name2);
-
-    if(isset_user(name2)){
-        ret = st2.step();
-        if(ret != SQLITE_DONE){
-            ret = sqlite_.exec("rollback");
+    try{
+        SqStmt st = sqlite_.prepare("select * from user where USERNAME=? and PASSWORD=?");
+        st.bind(1,name);
+        std::string tmp = sha256(pwd);
+        st.bind(2,tmp);
+        if(st.step() != SQLITE_ROW){    
+            throw std::runtime_error("auth error");
         }
-        SqStmt st3 = sqlite_.prepare("insert into log(USERNAME,OPERATOR,MONEY) values(?,?,?)");
-        st3.bind(1,name1);
-        st3.bind(2,"transfer->" + name2);
-        st3.bind(3,sum);
-        st3.step();
-        ret = sqlite_.exec("commit");
-        std::cout << "transfer success" << std::endl;
-    }else{
-        ret = sqlite_.exec("rollback");
-        std::cout << "error" << std::endl;
+        if(sqlite_.changes() !=0 ){
+            throw std::runtime_error("auth error");
+        }
     }
+    catch(const std::runtime_error& e){
+        return false;
+    }
+
+    return true;
 }
 
-long AccountDAO::balance(const std::string& name)
+bool AccountDAO::auth(const std::string& name)
+{
+    try{
+        SqStmt st = sqlite_.prepare("select * from user where USERNAME=?");
+        st.bind(1,name);
+        if(st.step() != SQLITE_ROW){    
+            throw std::runtime_error("auth error");
+        }
+        if(sqlite_.changes() !=0 ){
+            throw std::runtime_error("auth error");
+        }
+    }
+    catch(const std::runtime_error& e){
+        return false;
+    }
+
+    return true;
+}
+
+bool AccountDAO::log(const std::string&name, const std::string& ope, double sum)
+{
+     SqStmt st = sqlite_.prepare("insert into log(USERNAME,OPERATOR,MONEY) values(?,?,?)");
+     st.bind(1,name);
+     st.bind(2,ope);
+     st.bind(3,sum);
+     st.step();
+     if(sqlite_.changes() == 0){
+        throw std::runtime_error("insert error");
+        return false;
+     }
+
+     return true;
+}
+
+bool AccountDAO::insert(const std::string& name,const std::string& pwd)
+{
+    try{
+        SqStmt st = sqlite_.prepare("insert into user(USERNAME,PASSWORD) values(?,?)");
+        st.bind(1,name);
+        std::string tmp = sha256(pwd);
+        st.bind(2,tmp);
+        st.step();
+        if(sqlite_.changes() == 0){
+            throw std::runtime_error("insert error");
+        }
+    }
+    catch(const std::runtime_error& e){
+        return false;    
+    }
+
+    return true;
+}
+
+
+bool AccountDAO::deposit(const std::string& name,double sum)
+{
+    try{
+        sqlite_.exec("begin");
+        SqStmt st = sqlite_.prepare("update user set BALANCE=BALANCE+? where USERNAME=?");
+        st.bind(1,sum);
+        st.bind(2,name);
+        st.step();
+        if(sqlite_.changes() == 0){
+            throw std::runtime_error("deposit error");
+        }
+        log(name,"deposit",sum);
+
+        sqlite_.exec("commit");
+    }
+    catch(const std::runtime_error& e){
+    
+        sqlite_.exec("rollback");
+        return false;
+    }
+
+
+    return true;
+}
+
+bool AccountDAO::withdraw(const std::string& name,double sum)
+{
+    try{
+        SqStmt st = sqlite_.prepare("update user set BALANCE=BALANCE-? where USERNAME=? and BALANCE>?");
+        st.bind(1,sum);
+        st.bind(2,name);
+        st.bind(3,sum);
+        st.step();
+        if(sqlite_.changes() == 0){
+            throw std::runtime_error("withdraw error");
+        }
+        log(name,"withdraw",sum);
+        sqlite_.exec("commit");
+    }
+    catch(const std::runtime_error& e){
+    
+        sqlite_.exec("rollback");
+        return false;
+    }
+
+    return true;
+}
+
+
+bool AccountDAO::transfer(const std::string& name1,const std::string& name2, double sum)
+{
+    try{
+        sqlite_.exec("begin");
+        withdraw(name1,sum);
+        deposit(name2,sum);
+        sqlite_.exec("commit");
+    }
+    catch(const std::runtime_error& e){
+
+        sqlite_.exec("rollback");
+        return false;
+    }
+
+    return true;
+}
+
+double AccountDAO::balance(const std::string& name)
 {
     SqStmt st = sqlite_.prepare("select * from user where USERNAME=?");
     st.bind(1,name);
-    if(st.step() == SQLITE_ROW){
-        return st.column_int(3);
+    if(st.step() != SQLITE_ROW){
+        throw std::runtime_error("balance error");
     }
+    double res = 0;
+    st.column(3,res);
+    return res;    
 }
