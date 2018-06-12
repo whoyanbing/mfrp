@@ -34,13 +34,13 @@ private:
 
 class AccountDAO{
 public:
-		bool auth(const std::string& name,const std::string& pwd);
-		bool auth(const std::string& name);
-        bool log(const std::string&name,const std::string& ope, double sum);
-		bool insert(const std::string& name,const std::string& pwd);
-		bool deposit(const std::string& name,double sum);
-		bool withdraw(const std::string& name, double sum);
-		bool transfer(const std::string& name1,const std::string& name2, double sum);
+		void auth(const std::string& name,const std::string& pwd);
+		void auth(const std::string& name);
+        void log(const std::string&name,const std::string& ope, double sum);
+		void insert(const std::string& name,const std::string& pwd);
+		void deposit(const std::string& name,double sum);
+		void withdraw(const std::string& name, double sum);
+		void transfer(const std::string& name1,const std::string& name2, double sum);
 		double balance(const std::string& name);
 private:
 		Sqlite sqlite_;
