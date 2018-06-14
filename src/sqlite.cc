@@ -149,6 +149,7 @@ void AccountDAO::deposit(const std::string& name,double sum)
         sqlite_.exec("commit");
     }
     catch(const std::runtime_error& e){    
+        throw std::runtime_error("deposit error");
         sqlite_.exec("rollback");
     }
 }
@@ -159,7 +160,7 @@ void AccountDAO::withdraw(const std::string& name,double sum)
         throw std::runtime_error("withdraw error"); 
     }
     try{
-        SqStmt st = sqlite_.prepare("update user set BALANCE=BALANCE-? where USERNAME=? and BALANCE>?");
+        SqStmt st = sqlite_.prepare("update user set BALANCE=BALANCE-? where USERNAME=? and BALANCE>=?");
         st.bind(1,sum);
         st.bind(2,name);
         st.bind(3,sum);

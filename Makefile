@@ -1,14 +1,7 @@
-#!/bin/bash
-all: Sqlite
-
-s.o: sqlite.cc sqlite.h
-	g++ -o s.o -c sqlite.cc
-at.o: Account_test.cc sqlite.h
-	g++ -o at.o -c Account_test.cc
-Sqlite: s.o at.o 
-	g++ -o Sqlite s.o at.o -lsqlite3
+atm: src/main.cc src/ATM.cc src/sqlite.cc
+	g++ src/main.cc src/ATM.cc src/sqlite.cc -lsqlite3 -lcrypto -o bin/atm
 
 .PHONY: clean
 clean:
-	rm -f s.o at.o Sqlite
+	rm *.o 
 

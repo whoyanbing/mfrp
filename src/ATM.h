@@ -17,5 +17,4 @@ public:
 private:
     AccountDAO User;
 };
-
 #endif
