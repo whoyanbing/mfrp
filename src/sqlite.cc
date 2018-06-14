@@ -138,7 +138,7 @@ void AccountDAO::insert(const std::string& name,const std::string& pwd)
 void AccountDAO::deposit(const std::string& name,double sum)
 {
     if(sum < 0){
-        throw std::runtime_error("withdraw error"); 
+        throw std::runtime_error("deposit error"); 
     }
     try{
         sqlite_.exec("begin");

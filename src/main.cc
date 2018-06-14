@@ -50,7 +50,6 @@ int main(int argc, char *argv[])
         if(user_pwd == user_repwd){
 
             atm.user_register(user_name,user_pwd);
-            std::cout << "\n开户成功！！" << std::endl;
 
         }
         else{
@@ -63,7 +62,6 @@ int main(int argc, char *argv[])
             std::getline(std::cin,user_repwd);
             system("stty echo");
             atm.user_register(user_name,user_pwd);
-            std::cout << "\n开户成功！！" << std::endl;
 
         }
     }

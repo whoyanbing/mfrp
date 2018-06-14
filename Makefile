@@ -3,10 +3,10 @@
 all: bin/atm
 
 bin/s.o: src/sqlite.cc src/sqlite.h
-	g++ -o bin/s.o -c src/sqlite.cc
+	g++ -o bin/s.o -c src/sqlite.cc -lsqlite3 -lcrypto
 
 bin/A.o: src/ATM.cc src/ATM.h
-	g++ -o bin/A.o -c src/ATM.cc
+	g++ -o bin/A.o -c src/ATM.cc -lsqlite3 -lcrypto
 
 bin/m.o: src/main.cc src/sqlite.h
 	g++ -o bin/m.o -c src/main.cc
