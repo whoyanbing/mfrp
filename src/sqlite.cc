@@ -24,6 +24,7 @@ void SqStmt::bind(int index, double val)
 int SqStmt::step()
 {
 	int res = sqlite3_step(stmt_);
+
     if(res != SQLITE_DONE && res != SQLITE_ROW){
         throw std::runtime_error("step error");
     }
@@ -57,6 +58,7 @@ std::string DB_PATH;
 Sqlite::Sqlite()
 {
 	int res = sqlite3_open(DB_PATH.c_str(), &db_);
+
 	if(res != SQLITE_OK)
         throw std::runtime_error("db open error");
 }
@@ -64,6 +66,7 @@ Sqlite::Sqlite()
 SqStmt Sqlite::prepare(const std::string& sql)
 {
     SqStmt stmt;
+
 	if(sqlite3_prepare_v2(db_, sql.c_str(), -1, &stmt.stmt_, NULL) != SQLITE_OK){
         throw std::runtime_error("prepare error"); 
     }
@@ -72,7 +75,8 @@ SqStmt Sqlite::prepare(const std::string& sql)
     }
 }
 
-int Sqlite::changes(){
+int Sqlite::changes()
+{
     return sqlite3_changes(db_);
 }
 
@@ -89,22 +93,22 @@ Sqlite::~Sqlite()
 
 void AccountDAO::auth(const std::string& name,const std::string& pwd)
 {
-        SqStmt st = sqlite_.prepare("select * from user where USERNAME=? and PASSWORD=?");
-        st.bind(1,name);
-        std::string tmp = sha256(pwd);
-        st.bind(2,tmp);
-        if(st.step() != SQLITE_ROW){    
-            throw std::runtime_error("auth error");
-        }
+    SqStmt st = sqlite_.prepare("select * from user where USERNAME=? and PASSWORD=?");
+    st.bind(1,name);
+    std::string tmp = sha256(pwd);
+    st.bind(2,tmp);
+    if(st.step() != SQLITE_ROW){    
+        throw std::runtime_error("auth error");
+    }
 }
 
 void AccountDAO::auth(const std::string& name)
 {
-        SqStmt st = sqlite_.prepare("select * from user where USERNAME=?");
-        st.bind(1,name);
-        if(st.step() == SQLITE_ROW){    
-            throw std::runtime_error("user exists");
-        }
+    SqStmt st = sqlite_.prepare("select * from user where USERNAME=?");
+    st.bind(1,name);
+    if(st.step() == SQLITE_ROW){    
+        throw std::runtime_error("user exists");
+    }
 }
 
 void AccountDAO::log(const std::string&name, const std::string& ope, double sum)

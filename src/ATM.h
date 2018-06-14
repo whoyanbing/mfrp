@@ -14,6 +14,7 @@ public:
     void money_draw(const std::string& name, double money);
     void money_query(const std::string& name);
     void money_trans(const std::string& name1, const std::string& name2,double money);
+
 private:
     AccountDAO User;
 };
