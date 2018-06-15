@@ -39,7 +39,9 @@ public:
         void log(const std::string&name,const std::string& ope, double sum);
 		void insert(const std::string& name,const std::string& pwd);
 		void deposit(const std::string& name,double sum);
+		void deposit_(const std::string& name,double sum);
 		void withdraw(const std::string& name, double sum);
+		void withdraw_(const std::string& name, double sum);
 		void transfer(const std::string& name1,const std::string& name2, double sum);
 		double balance(const std::string& name);
 private:

@@ -2,20 +2,22 @@
 
 all: bin/atm
 
+bin/f.o: src/function.cc src/function.h
+	g++ -o bin/f.o -c src/function.cc
+
 bin/s.o: src/sqlite.cc src/sqlite.h
-	g++ -o bin/s.o -c src/sqlite.cc -lsqlite3 -lcrypto
+	g++ -o bin/s.o -c src/sqlite.cc
 
 bin/A.o: src/ATM.cc src/ATM.h
-	g++ -o bin/A.o -c src/ATM.cc -lsqlite3 -lcrypto
+	g++ -o bin/A.o -c src/ATM.cc
 
 bin/m.o: src/main.cc src/sqlite.h
 	g++ -o bin/m.o -c src/main.cc
 
-
-bin/atm: bin/m.o bin/A.o bin/s.o
-	g++ -o bin/atm bin/A.o bin/m.o bin/s.o -lsqlite3 -lcrypto
+bin/atm: bin/f.o bin/m.o bin/A.o bin/s.o
+	g++ -o bin/atm bin/f.o bin/s.o bin/A.o bin/m.o -lsqlite3 -lcrypto
 
 .PHONY: clean
 clean:
-	rm -f bin/A.o bin/m.o bin/s.o bin/atm
+	rm -f bin/*.o bin/atm
 

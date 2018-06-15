@@ -1,6 +1,6 @@
 #include "sqlite.h"
 #include <iostream>
-#include "function.cc"
+#include "function.h"
 #include <stdexcept>
 
 void SqStmt::bind(int index, int val)
@@ -98,7 +98,7 @@ void AccountDAO::auth(const std::string& name,const std::string& pwd)
     std::string tmp = sha256(pwd);
     st.bind(2,tmp);
     if(st.step() != SQLITE_ROW){    
-        throw std::runtime_error("auth error");
+        throw std::runtime_error("用户名或密码错误，登陆失败！！！");
     }
 }
 
@@ -107,7 +107,7 @@ void AccountDAO::auth(const std::string& name)
     SqStmt st = sqlite_.prepare("select * from user where USERNAME=?");
     st.bind(1,name);
     if(st.step() == SQLITE_ROW){    
-        throw std::runtime_error("user exists");
+        throw std::runtime_error("\n用户已存在！！！");
     }
 }
 
@@ -131,14 +131,14 @@ void AccountDAO::insert(const std::string& name,const std::string& pwd)
      st.bind(2,tmp);
      st.step();
      if(sqlite_.changes() == 0){
-         throw std::runtime_error("insert error");
+         throw std::runtime_error("开户失败！！！");
      }
 }
 
 void AccountDAO::deposit(const std::string& name,double sum)
 {
     if(sum < 0){
-        throw std::runtime_error("deposit error"); 
+        throw std::runtime_error("存款失败！！！"); 
     }
     try{
         sqlite_.exec("begin");
@@ -147,21 +147,65 @@ void AccountDAO::deposit(const std::string& name,double sum)
         st.bind(2,name);
         st.step();
         if(sqlite_.changes() == 0){
-            throw std::runtime_error("deposit error");
+            throw std::runtime_error("存款失败！！！");
         }
         log(name,"deposit",sum);
         sqlite_.exec("commit");
     }
     catch(const std::runtime_error& e){    
-        throw std::runtime_error("deposit error");
         sqlite_.exec("rollback");
+        throw std::runtime_error("存款失败！！！");
+    }
+}
+
+void AccountDAO::deposit_(const std::string& name,double sum)
+{
+    if(sum < 0){
+        throw std::runtime_error("存款失败！！！"); 
+    }
+    try{
+        SqStmt st = sqlite_.prepare("update user set BALANCE=BALANCE+? where USERNAME=?");
+        st.bind(1,sum);
+        st.bind(2,name);
+        st.step();
+        if(sqlite_.changes() == 0){
+            throw std::runtime_error("存款失败！！！");
+        }
+        log(name,"deposit",sum);
+    }
+    catch(const std::runtime_error& e){    
+        throw std::runtime_error("存款失败！！！");
     }
 }
 
 void AccountDAO::withdraw(const std::string& name,double sum)
 {
     if(sum < 0){
-        throw std::runtime_error("withdraw error"); 
+        throw std::runtime_error("取款失败！！！"); 
+    }
+    try{
+        sqlite_.exec("begin");
+        SqStmt st = sqlite_.prepare("update user set BALANCE=BALANCE-? where USERNAME=? and BALANCE>=?");
+        st.bind(1,sum);
+        st.bind(2,name);
+        st.bind(3,sum);
+        st.step();
+        if(sqlite_.changes() == 0){
+            throw std::runtime_error("取款失败！！！");
+        }
+        log(name,"withdraw",sum);
+        sqlite_.exec("commit");
+    }
+    catch(const std::runtime_error& e){
+        sqlite_.exec("rollback");
+        throw std::runtime_error("取款失败！！！");
+    }
+}
+
+void AccountDAO::withdraw_(const std::string& name,double sum)
+{
+    if(sum < 0){
+        throw std::runtime_error("取款失败！！！"); 
     }
     try{
         SqStmt st = sqlite_.prepare("update user set BALANCE=BALANCE-? where USERNAME=? and BALANCE>=?");
@@ -170,14 +214,12 @@ void AccountDAO::withdraw(const std::string& name,double sum)
         st.bind(3,sum);
         st.step();
         if(sqlite_.changes() == 0){
-            throw std::runtime_error("withdraw error");
+            throw std::runtime_error("取款失败！！！");
         }
         log(name,"withdraw",sum);
-        sqlite_.exec("commit");
     }
     catch(const std::runtime_error& e){
-        throw std::runtime_error("withdraw error");
-        sqlite_.exec("rollback");
+        throw std::runtime_error("取款失败！！！");
     }
 }
 
@@ -185,13 +227,13 @@ void AccountDAO::transfer(const std::string& name1,const std::string& name2, dou
 {
     try{
         sqlite_.exec("begin");
-        withdraw(name1,sum);
-        deposit(name2,sum);
+        withdraw_(name1,sum);
+        deposit_(name2,sum);
         sqlite_.exec("commit");
     }
     catch(const std::runtime_error& e){
-        throw std::runtime_error("transfer error");
         sqlite_.exec("rollback");
+        throw std::runtime_error("转账失败！！！");
     }
 }
 
@@ -200,7 +242,7 @@ double AccountDAO::balance(const std::string& name)
     SqStmt st = sqlite_.prepare("select * from user where USERNAME=?");
     st.bind(1,name);
     if(st.step() != SQLITE_ROW){
-        throw std::runtime_error("balance error");
+        throw std::runtime_error("余额查询失败！！！");
     }
     double res = 0;
     st.column(3,res);

@@ -30,6 +30,7 @@ void ATM::user_register(const std::string& name,const std::string& pwd){
 
             User.auth(name);
             User.insert(name,pwd);
+            std::cout << "恭喜您" << name << "，开户成功！！！" << std::endl;
 
         }catch(const std::runtime_error& e){
 
@@ -39,7 +40,7 @@ void ATM::user_register(const std::string& name,const std::string& pwd){
 
     }else{
 
-        std::cout << "\ninput cant't be null" << std::endl;
+        std::cout << "\n用户名或者密码不能为空！！！" << std::endl;
 
     }
 }
@@ -59,7 +60,7 @@ void ATM::user_login(const std::string& name,const std::string& pwd)
 
     }else{
 
-        std::cout << "\ninput cant't be null" << std::endl;
+        std::cout << "\n用户名或密码不能为空！！！！" << std::endl;
 
     }
 }
@@ -67,10 +68,13 @@ void ATM::user_login(const std::string& name,const std::string& pwd)
 void ATM::money_save(const std::string& name, double money)
 {
     try{
+        system("date");
 
         User.deposit(name,money);
 
-        std::cout << "您已经成功存入 " << money << "元!!!" << std::endl;
+        std::cout << name << ",您已经成功存入 " << money << " 元!!!" << std::endl;
+
+        std::cout << "目前您的余额是 " << User.balance(name) << " 元!!!" << std::endl;
 
     }catch(const std::runtime_error& e){
 
@@ -82,10 +86,13 @@ void ATM::money_save(const std::string& name, double money)
 void ATM::money_draw(const std::string& name, double money)
 {
     try{
+        system("date");
 
         User.withdraw(name,money);
 
-        std::cout << "您已经成功取出 " << money << "元!!!" << std::endl;
+        std::cout << name <<",您已经成功取出 " << money << " 元!!!" << std::endl;
+
+        std::cout << "目前你的余额是 " << User.balance(name) << " 元!!!" << std::endl;
 
     }catch(const std::runtime_error& e){
 
@@ -96,8 +103,9 @@ void ATM::money_draw(const std::string& name, double money)
 void ATM::money_query(const std::string& name)
 {
     try{
-
-        std::cout << "您的余额是："<< User.balance(name) << "元!!!" << std::endl;
+        system("date");
+        
+        std::cout << name << ",目前您的余额是："<< User.balance(name) << " 元!!!" << std::endl;
 
     }catch(const std::runtime_error& e){
 
@@ -108,10 +116,13 @@ void ATM::money_query(const std::string& name)
 void ATM::money_trans(const std::string& name1,const std::string& name2, double money)
 {
     try{
+        system("date");
 
         User.transfer(name1,name2,money);
 
-        std::cout << "您已经成功转给 " << name2 << " " << money << "元!!!" << std::endl;
+        std::cout << name1 << ",您已经成功转给 " << name2 << " " << money << " 元!!!" << std::endl;
+
+        std::cout << "目前你的余额是 " << User.balance(name1) << " 元!!!" << std::endl;
 
     }catch(const std::runtime_error& e){
 
