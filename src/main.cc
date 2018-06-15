@@ -92,40 +92,58 @@ int main(int argc, char *argv[])
             }
 
             if(user_choice == "2"){
+                try{
                 system("clear");
                 std::cout << "请输入您要存入的金额：" << std::endl;
                 std::getline(std::cin,money);
-                try{
+                std::cout << "您存入的金额是" << stod(money) << "元，确认请按‘y’" << std::endl;
+                std::getline(std::cin,user_choice);
+                if(user_choice == "y" || user_choice == "Y"){
                     atm.money_save(user_name, stod(money));
+                }else{
+                    std::cout << "您已取消存入" << stod(money) << "元！" << std::endl;
+                }
                 }
                 catch(const std::invalid_argument& e){
-                    std::cout << "money input error"  << std::endl;
+                    std::cout << "不合法的！！！"  << std::endl;
                 }
             }
 
             if(user_choice == "3"){
+                try{
                 system("clear");
                 std::cout << "请输入您要取出的金额：" << std::endl;
                 std::getline(std::cin ,money);
-                try{
+                std::cout << "您取出的金额是" << stod(money) << "元，确认请按‘y’" << std::endl;
+                std::getline(std::cin,user_choice);
+                if(user_choice == "y" || user_choice == "Y"){
                     atm.money_draw(user_name, stod(money));
+                }else{
+                    std::cout << "您已取消取出" << stod(money) << "元！" << std::endl;
+                }
                 }
                 catch(const std::invalid_argument& e){
-                    std::cout << "money inpout error" << std::endl;
+                    std::cout << "不合法的！！！" << std::endl;
                 }
             }
 
             if(user_choice == "4"){
+                try{
                 system("clear");
                 std::cout << "请输入您要转账的用户名：" << std::endl;
                 std::getline(std::cin,user_name2);
                 std::cout << "请输入您要转账的金额：" << std::endl;
                 std::getline(std::cin,money);
-                try{
+                std::cout << "您即将转给" << user_name2 << "的金额是 " << stod(money) << "元，确认请按‘y’" << std::endl;
+                std::getline(std::cin,user_choice);
+                if(user_choice == "y" || user_choice == "Y"){
                     atm.money_trans(user_name,user_name2, stod(money));
+                }else{
+                    std::cout << "您已取消转给" << user_name2 << stod(money) << "元！" << std::endl;
+                }
                 }
                 catch(const std::invalid_argument& e){
-                    std::cout << "money input error" << std::endl;
+                    std::cout << "不合法的！！！！" << std::endl;
                 }   
             }
 
